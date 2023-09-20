@@ -22,6 +22,8 @@ headers = data1.pop(0)
 
 df = pd.DataFrame(data, columns=headers)
 print(df)
+
+# Compute linear regression : 
 x_data = df['dist.(metres)']
 y_data = df['moyenne(mS/cm)']
 x_mean = sum(x_data) / len(x_data)
@@ -62,8 +64,18 @@ plt.errorbar(
     yerr=df['std_dev'],
     capsize = 4,
     ecolor='darkred',
-    label='écart-type'
+    label='Écart-type'
 )
+
+# Add annotations for rad. values: 
+x = df['dist.(metres)'].values.tolist()
+y = df['moyenne(mS/cm)'].values.tolist()
+ 
+for i in range(0, len(y)):
+    plt.annotate(' ' + str(y[i]) + 'mS/cm', (x[i], y[i]), fontsize=9)
+
+
+
 plt.xticks(df['dist.(metres)'], color='black')
 plt.xlabel ('Distance du centre en mètres')
 plt.ylabel ('Radioactivité en mS/cm')

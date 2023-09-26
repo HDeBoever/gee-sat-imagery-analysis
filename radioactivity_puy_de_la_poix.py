@@ -54,7 +54,7 @@ plt.plot(
     x_data, 
     y_hat,
     label='Courbe de tendance',
-    color='black',
+    color='darkred',
     linewidth=0.2,
 )
 

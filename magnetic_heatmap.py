@@ -4,7 +4,6 @@ from IPython.display import display
 
 pd.set_option('display.max_columns', None)
 
-# read text file into pandas DataFrame
 df = pd.read_csv("mag_data1.txt", sep=",")
   
 print(df)
@@ -24,12 +23,13 @@ fig = px.density_mapbox(
     df, 
     lat=x, 
     lon=y, 
-    z=mag_field, 
+    z=mag_field,
+    opacity=1, 
     radius=15,
     center=dict(lat=45.782, lon=3.147), zoom=18,
-    mapbox_style="stamen-terrain",
+    mapbox_style="open-street-map",
     labels= {'lat':'lat', 'lon':'lon', 'z':'µT'},
-    title='Puy de la Poix : distributions de valeurs magnétiques au transect 1',
+    title='Variances du champ magnétique (µT) le long du transect l',
     width=1250,
     height=1000,
 )

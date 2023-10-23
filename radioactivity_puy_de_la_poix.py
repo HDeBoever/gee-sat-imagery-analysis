@@ -55,7 +55,7 @@ plt.plot(
     y_hat,
     label='Courbe de tendance',
     color='darkred',
-    linewidth=0.2,
+    linewidth=0.3,
 )
 
 plt.errorbar(
@@ -72,18 +72,17 @@ x = df['dist.(metres)'].values.tolist()
 y = df['moyenne(mS/cm)'].values.tolist()
  
 for i in range(0, len(y)):
-    plt.annotate(' ' + str(y[i]) + 'mS/cm', (x[i], y[i]), fontsize=9)
+    plt.annotate(' ' + str(y[i]) + 'mS/cm', (x[i], y[i]), fontsize=10)
 
 
 
 plt.xticks(df['dist.(metres)'], color='black')
-plt.xlabel ('Distance du centre en mètres')
-plt.ylabel ('Radioactivité en mS/cm')
-plt.title('Figure 4 : Mesures de radioactivité sur transect 1')
+plt.xlabel ('Distance du centre en mètres', fontsize=16)
+plt.ylabel ('Radioactivité en mS/cm', fontsize=16)
+# plt.title('Figure 4 : Mesures de radioactivité sur transect 1')
 
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
 plt.legend(by_label.values(), by_label.keys())
-
 
 plt.show()

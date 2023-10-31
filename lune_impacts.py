@@ -26,6 +26,8 @@ def plot_data(filename, plot):
             moon_frame = [xll_corner,x_max,yll_corner,y_max]
             plt.figure()
             plt.imshow(data, extent=moon_frame, aspect='auto')
+            heatmap = plt.pcolor(data)
+            plt.colorbar(heatmap)
             plt.show()
 
         return data
@@ -54,7 +56,7 @@ def apply_mask(dem, mask_matrix, crater_num):
     return (crater_num, depth, max_dim, area)
 
 def get_crater_topography(dem, mask_matrix, direction, crater_dict):
-    # Use subplot to get all the craters
+    # Use subplot to plot all transects in the same output
     cols = 8
     rows = ceil(len(crater_dict) / cols)
 
@@ -66,12 +68,12 @@ def get_crater_topography(dem, mask_matrix, direction, crater_dict):
         plt.subplot(rows, cols, index + 1) 
         if direction == 'WE':
             plt.plot(temp_dem[profile_location[0][0]])
-        else:
-             plt.plot(temp_dem[:,profile_location[1][0]])
+        elif direction == 'NS':
+            plt.plot(temp_dem[:,profile_location[1][0]])
     if direction == 'WE':         
         plt.title('Transects en Ouest-Est')
-    else:
-         plt.title('Transects en Nord-Sud')
+    elif direction == 'NS':
+        plt.title('Transects en Nord-Sud')
     plt.show()
 
     return None
@@ -181,7 +183,7 @@ def main(argv):
     craters = get_crater_data()
     plot_crater_data(craters)
     # print(craters)
-    terrain = plot_data('lune_impacts.asc', False)
+    terrain = plot_data('lune_impacts.asc', True)
     masque = plot_data('lune_masque.asc', False)
 
     get_crater_topography(terrain, masque, 'WE', craters)

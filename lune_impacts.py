@@ -13,8 +13,6 @@ def plot_data(filename, plot):
 
     with codecs.open(filename, encoding='utf-8-sig') as f:
         data = np.loadtxt(f, skiprows = 5)
-        # print(data)
-
         data[data == -9999] = np.nan
         cell_size = 0.015625
         num_rows = data.shape[0]
@@ -27,8 +25,7 @@ def plot_data(filename, plot):
         if plot is True:
             moon_frame = [xll_corner,x_max,yll_corner,y_max]
             plt.figure()
-            # recalculate the x ticks based on cell size
-            plt.imshow(data)
+            plt.imshow(data, extent=moon_frame, aspect='auto')
             plt.show()
 
         return data
@@ -112,7 +109,6 @@ def plot_crater_data(crater_data):
     )
 
     p = np.polyfit(depths, np.log(rayons), 1)
-
     # Convert the polynomial back into an exponential
     a = np.exp(p[1])
     b = p[0]
@@ -123,7 +119,7 @@ def plot_crater_data(crater_data):
         depths_fitted, 
         y_fitted, 
         color='darkred', 
-        label='Courbe de tendance y = a*e^profondeur',
+        label='Courbe de tendance y = a*e^(x*profondeur)',
         linewidth=0.4,
     )
 
@@ -155,39 +151,41 @@ def analyse_crater_radius(craters, R_planete):
         label='Cratères lunaires'
     )
 
-    plt.scatter(75000, calculate_impactor_radius(75000, 6371000), color = 'red', label='Cratère Chicxulub')
-    plt.scatter(600, calculate_impactor_radius(600, 6371000), color = 'blue', label='Cratère Barringer')
+    plt.scatter(75000, calculate_impactor_radius(75000, 6371000, False), color = 'red', label='Cratère Chicxulub')
+    plt.scatter(600, calculate_impactor_radius(600, 6371000, False), color = 'blue', label='Cratère Barringer')
 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
-    plt.xlabel ('Rayons de cratère (m)', fontsize=16)
+    plt.xlabel ('Rayon de cratère (m)', fontsize=16)
     plt.ylabel ('Rayon du corps impactant (m) ', fontsize=16)
     plt.title('Rayon du corps impactant en fonction du rayon du cratère')
     plt.show()
         
     return None
 
-def calculate_impactor_radius(crater_radius, planet_radius):
+def calculate_impactor_radius(crater_radius, planet_radius, print_data):
     impactor_radius = (crater_radius**4/planet_radius)**(1/3)
-    print("The impactor radius was : " + str(round(impactor_radius,2)) + " metres.")
+    if print_data:
+        print("The impactor radius was : " + str(round(impactor_radius,2)) + " metres.")
     return impactor_radius
 
-r_earth = 6371000
-r_moon = 1738000
+def main(argv):
+    r_earth = 6371000
+    r_moon = 1738000
 
-calculate_impactor_radius(600, r_earth)
-calculate_impactor_radius(75000, r_earth)
+    calculate_impactor_radius(600, r_earth, True)
+    calculate_impactor_radius(75000, r_earth, True)
 
-craters = get_crater_data()
-plot_crater_data(craters)
-# print(craters)
+    craters = get_crater_data()
+    plot_crater_data(craters)
 
-terrain = plot_data('lune_impacts.asc', False)
+    terrain = plot_data('lune_impacts.asc', True)
+    masque = plot_data('lune_masque.asc', True)
 
-masque = plot_data('lune_masque.asc', False)
+    get_crater_topography(terrain, masque, 'WE', craters)
+    get_crater_topography(terrain, masque, 'NS', craters)
+    analyse_crater_radius(craters, 1738000)
 
-# get_crater_topography(terrain, masque, 'WE', craters)
-# get_crater_topography(terrain, masque, 'NS', craters)
-
-analyse_crater_radius(craters, 1738000)
+if __name__ == "__main__":
+	main(sys.argv)

@@ -1,5 +1,7 @@
 import codecs, sys
 from math import ceil
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D  
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -23,7 +25,7 @@ def plot_data(filename, plot):
         y_max = yll_corner+(num_cols*cell_size)
 
         if plot is True:
-            moon_frame = [xll_corner,x_max,yll_corner,y_max]
+            moon_frame = [xll_corner,x_max,y_max,yll_corner]
             plt.figure()
             plt.imshow(data, extent=moon_frame, aspect='auto')
             heatmap = plt.pcolor(data)
@@ -61,15 +63,16 @@ def get_crater_topography(dem, mask_matrix, direction, crater_dict):
     rows = ceil(len(crater_dict) / cols)
 
     for index, key in enumerate(crater_dict):
-        temp = mask_matrix==index+1
-        temp_dem = np.copy(dem)
-        temp_dem[temp==0] = np.nan
-        profile_location = np.where(temp_dem == np.nanmin(temp_dem))
-        plt.subplot(rows, cols, index + 1) 
-        if direction == 'WE':
-            plt.plot(temp_dem[profile_location[0][0]])
-        elif direction == 'NS':
-            plt.plot(temp_dem[:,profile_location[1][0]])
+        if index == 16:
+            temp = mask_matrix==index+1
+            temp_dem = np.copy(dem)
+            temp_dem[temp==0] = np.nan
+            profile_location = np.where(temp_dem == np.nanmin(temp_dem))
+            # plt.subplot(rows, cols, index + 1) 
+            if direction == 'WE':
+                plt.plot(temp_dem[profile_location[0][0]])
+            elif direction == 'NS':
+                plt.plot(temp_dem[:,profile_location[1][0]])
     if direction == 'WE':         
         plt.title('Transects en Ouest-Est')
     elif direction == 'NS':
@@ -173,6 +176,23 @@ def calculate_impactor_radius(crater_radius, planet_radius, print_data):
         print("The impactor radius was : " + str(round(impactor_radius,2)) + " metres.")
     return impactor_radius
 
+def crater_plot_3d(dem, crater_coords):
+    
+    plt.style.use('_mpl-gallery')
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    y = np.linspace(0, 10, num=640)
+    x = np.linspace(180, 195, num= 960)
+    (x,y) = np.meshgrid(x,y)
+    ax.plot_surface(x,y,dem,rstride=2,cstride=2)
+    ax.contour(x, y, dem, zdir='z', offset=-100, cmap='coolwarm')
+
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
+    ax.set_zlabel('Elevation (m)')
+    ax.legend()
+    plt.show()
+
 def main(argv):
     r_earth = 6371000
     r_moon = 1738000
@@ -181,14 +201,16 @@ def main(argv):
     calculate_impactor_radius(75000, r_earth, True)
 
     craters = get_crater_data()
-    plot_crater_data(craters)
+    # plot_crater_data(craters)
     # print(craters)
-    terrain = plot_data('lune_impacts.asc', True)
+    terrain = plot_data('lune_impacts.asc', False)
     masque = plot_data('lune_masque.asc', False)
 
-    get_crater_topography(terrain, masque, 'WE', craters)
-    get_crater_topography(terrain, masque, 'NS', craters)
-    analyse_crater_radius(craters, 1738000)
+    # get_crater_topography(terrain, masque, 'WE', craters)
+    # get_crater_topography(terrain, masque, 'NS', craters)
+    # analyse_crater_radius(craters, 1738000)
+
+    crater_plot_3d(terrain, None)
 
 if __name__ == "__main__":
 	main(sys.argv)

@@ -52,10 +52,11 @@ def apply_mask(dem, mask_matrix, crater_num):
     max_depth = np.nanmin(temp_dem)
     max_height = np.nanmax(temp_dem)
     depth = max_height - max_depth
-    max_dim = (int(np.sum(np.count_nonzero(temp, axis=0) > 0)))*480
+    max_dim = (int(np.sum(np.count_nonzero(temp, axis=0) > 0)))
     area = np.count_nonzero(temp != 0)
+    coords = np.where(temp_dem == np.nanmin(temp_dem))
 
-    return (crater_num, depth, max_dim, area)
+    return (crater_num, depth, max_dim, area, coords)
 
 def get_crater_topography(dem, mask_matrix, direction, crater_dict):
     # Use subplot to plot all transects in the same output
@@ -87,9 +88,9 @@ def get_crater_data():
     masque = plot_data('lune_masque.asc', False)
 
     for i in range(1,int(np.max(masque) + 1)):
-        curr_num, curr_depth, curr_len, curr_num_cells = apply_mask(terrain,masque,i)
+        curr_num, curr_depth, curr_len, curr_num_cells, curr_coords = apply_mask(terrain,masque,i)
         curr_radius = np.sqrt((curr_num_cells*480**2)/np.pi)
-        crater_data[curr_num] = curr_depth, curr_len, round(curr_radius,2)
+        crater_data[curr_num] = curr_depth, curr_len, round(curr_radius, 2), curr_coords, 
 
     return crater_data
 
@@ -176,21 +177,36 @@ def calculate_impactor_radius(crater_radius, planet_radius, print_data):
         print("The impactor radius was : " + str(round(impactor_radius,2)) + " metres.")
     return impactor_radius
 
-def crater_plot_3d(dem, crater_coords):
+def compute_crater_bounds(dem, crater_dict, crater_num):
+
+    centre_row = crater_dict[crater_num][3][0][0]
+    centre_col = crater_dict[crater_num][3][1][0]
+    max_row = centre_row + int(0.75*crater_dict[crater_num][1])
+    min_row = centre_row - int(0.75*crater_dict[crater_num][1])
+    left_col = centre_col - int(0.75*crater_dict[crater_num][1])
+    right_col = centre_col + int(0.75*crater_dict[crater_num][1])
+
+    return dem[min_row:max_row,left_col:right_col], (min_row, max_row, left_col, right_col), crater_num
+
+def crater_plot_3d(dem, crater_limits, crater_num):
+
+    # recompute grid coords based on curr grid size
+    print(crater_limits)
+    cell_size = 0.015625
     
     plt.style.use('_mpl-gallery')
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    y = np.linspace(0, 10, num=dem.shape[0])
-    x = np.linspace(180, 195, num= dem.shape[1])
+    y = np.linspace(crater_limits[0]*cell_size, crater_limits[1]*cell_size, num=dem.shape[0])
+    x = np.linspace(180+crater_limits[3]*cell_size, 180+crater_limits[2]*cell_size, num= dem.shape[1])
     (x,y) = np.meshgrid(x,y)
-    ax.plot_surface(x,y,dem,rstride=2,cstride=2)
+    ax.plot_surface(x,y,dem,rstride=1,cstride=1)
     ax.contour(x, y, dem, zdir='z', offset=-100, cmap='coolwarm')
 
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
     ax.set_zlabel('Elevation (m)')
-    ax.legend()
+    plt.title('Cratère numéro ' + str(crater_num))
     plt.show()
 
 def main(argv):
@@ -209,8 +225,8 @@ def main(argv):
     # get_crater_topography(terrain, masque, 'WE', craters)
     # get_crater_topography(terrain, masque, 'NS', craters)
     # analyse_crater_radius(craters, 1738000)
-
-    crater_plot_3d(terrain, None)
+    crater_to_plot = compute_crater_bounds(terrain, craters, 17)
+    crater_plot_3d(crater_to_plot[0], crater_to_plot[1], crater_to_plot[2])
 
 if __name__ == "__main__":
 	main(sys.argv)

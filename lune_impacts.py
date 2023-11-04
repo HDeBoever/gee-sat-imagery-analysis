@@ -193,16 +193,15 @@ def crater_plot_3d(dem, crater_limits, crater_num):
     # recompute grid coords based on curr grid size
     print(crater_limits)
     cell_size = 0.015625
-    
     plt.style.use('_mpl-gallery')
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    y = np.linspace(crater_limits[0]*cell_size, crater_limits[1]*cell_size, num=dem.shape[0])
-    x = np.linspace(180+crater_limits[3]*cell_size, 180+crater_limits[2]*cell_size, num= dem.shape[1])
+    y = np.linspace(10-crater_limits[1]*cell_size, 10-crater_limits[0]*cell_size, num=dem.shape[0])
+    x = np.linspace(180+crater_limits[2]*cell_size, 180+crater_limits[3]*cell_size, num= dem.shape[1])
     (x,y) = np.meshgrid(x,y)
-    ax.plot_surface(x,y,dem,rstride=1,cstride=1)
+    ax.plot_surface(x,y,np.flip(dem,0),rstride=1,cstride=1)
     ax.contour(x, y, dem, zdir='z', offset=-100, cmap='coolwarm')
-
+    ax.set_box_aspect((1,1,0.25))
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
     ax.set_zlabel('Elevation (m)')

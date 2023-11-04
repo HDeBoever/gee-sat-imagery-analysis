@@ -200,7 +200,7 @@ def crater_plot_3d(dem, crater_limits, crater_num):
     x = np.linspace(180+crater_limits[2]*cell_size, 180+crater_limits[3]*cell_size, num= dem.shape[1])
     (x,y) = np.meshgrid(x,y)
     ax.plot_surface(x,y,np.flip(dem,0),rstride=1,cstride=1)
-    ax.contour(x, y, dem, zdir='z', offset=-100, cmap='coolwarm')
+    ax.contour(x, y, dem, zdir='z', offset=-200, cmap='coolwarm')
     ax.set_box_aspect((1,1,0.25))
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')

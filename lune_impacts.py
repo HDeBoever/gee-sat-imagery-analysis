@@ -11,7 +11,7 @@ import numpy as np
 # yllcorner    0.000000000000
 # cellsize     480
 
-def plot_data(filename, plot):
+def read_data(filename, plot):
 
     with codecs.open(filename, encoding='utf-8-sig') as f:
         data = np.loadtxt(f, skiprows = 5)
@@ -23,9 +23,10 @@ def plot_data(filename, plot):
         x_max = xll_corner+(num_cols*cell_size) 
         yll_corner = 0
         y_max = yll_corner+(num_cols*cell_size)
+        moon_frame = [xll_corner,x_max,yll_corner,y_max]
 
         if plot is True:
-            moon_frame = [xll_corner,x_max,y_max,yll_corner]
+            print(moon_frame)
             plt.figure()
             plt.imshow(data, extent=moon_frame, aspect='auto')
             heatmap = plt.pcolor(data)
@@ -84,8 +85,8 @@ def get_crater_topography(dem, mask_matrix, direction, crater_dict):
 
 def get_crater_data():
     crater_data = {}
-    terrain = plot_data('lune_impacts.asc', False)
-    masque = plot_data('lune_masque.asc', False)
+    terrain = read_data('lune_impacts.asc', False)
+    masque = read_data('lune_masque.asc', False)
 
     for i in range(1,int(np.max(masque) + 1)):
         curr_num, curr_depth, curr_len, curr_num_cells, curr_coords = apply_mask(terrain,masque,i)
@@ -196,11 +197,11 @@ def crater_plot_3d(dem, crater_limits, crater_num):
     plt.style.use('_mpl-gallery')
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    y = np.linspace(10-crater_limits[1]*cell_size, 10-crater_limits[0]*cell_size, num=dem.shape[0])
+    y = np.linspace(crater_limits[1]*cell_size, crater_limits[0]*cell_size, num=dem.shape[0])
     x = np.linspace(180+crater_limits[2]*cell_size, 180+crater_limits[3]*cell_size, num= dem.shape[1])
     (x,y) = np.meshgrid(x,y)
     ax.plot_surface(x,y,np.flip(dem,0),rstride=1,cstride=1)
-    ax.contour(x, y, dem, zdir='z', offset=-200, cmap='coolwarm')
+    ax.contour(x, y, np.flip(dem,0), zdir='z', offset=-500, cmap='coolwarm')
     ax.set_box_aspect((1,1,0.25))
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
@@ -218,8 +219,8 @@ def main(argv):
     craters = get_crater_data()
     # plot_crater_data(craters)
     # print(craters)
-    terrain = plot_data('lune_impacts.asc', False)
-    masque = plot_data('lune_masque.asc', False)
+    terrain = read_data('lune_impacts.asc', True)
+    masque = read_data('lune_masque.asc', False)
 
     # get_crater_topography(terrain, masque, 'WE', craters)
     # get_crater_topography(terrain, masque, 'NS', craters)

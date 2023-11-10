@@ -1,4 +1,4 @@
-import codecs, sys
+import codecs, sys, os
 from math import ceil
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D  
@@ -15,6 +15,7 @@ def read_data(filename, plot):
 
     with codecs.open(filename, encoding='utf-8-sig') as f:
         data = np.loadtxt(f, skiprows = 5)
+        data = np.flip(data,0)
         data[data == -9999] = np.nan
         cell_size = 0.015625
         num_rows = data.shape[0]
@@ -187,9 +188,12 @@ def compute_crater_bounds(dem, crater_dict, crater_num):
     left_col = centre_col - int(0.75*crater_dict[crater_num][1])
     right_col = centre_col + int(0.75*crater_dict[crater_num][1])
 
+    if min_row < 0:
+        min_row = 0
+
     return dem[min_row:max_row,left_col:right_col], (min_row, max_row, left_col, right_col), crater_num
 
-def crater_plot_3d(dem, crater_limits, crater_num):
+def crater_plot_3d(dem, crater_limits, crater_num, save):
 
     # recompute grid coords based on curr grid size
     print(crater_limits)
@@ -201,13 +205,25 @@ def crater_plot_3d(dem, crater_limits, crater_num):
     x = np.linspace(180+crater_limits[2]*cell_size, 180+crater_limits[3]*cell_size, num= dem.shape[1])
     (x,y) = np.meshgrid(x,y)
     ax.plot_surface(x,y,np.flip(dem,0),rstride=1,cstride=1)
-    ax.contour(x, y, np.flip(dem,0), zdir='z', offset=-500, cmap='coolwarm')
+    ax.contour(x, y, np.flip(dem,0), 
+               zdir='z', 
+               offset=crater_limits[1]*cell_size-crater_limits[0]*cell_size, 
+               cmap='coolwarm')
     ax.set_box_aspect((1,1,0.25))
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
     ax.set_zlabel('Elevation (m)')
     plt.title('Cratère numéro ' + str(crater_num))
-    plt.show()
+    if save == True:
+        if not os.path.exists('projections_3D'):
+            os.makedirs('projections_3D')
+        plt.tight_layout()
+        plt.rcParams.update({'font.size': 3})
+        plt.rcParams["figure.figsize"] = [24,24]
+        plt.savefig('projections_3D/cratère_'+str(crater_num)+'.png', dpi=1000)
+        plt.close()
+    else:
+        plt.show()
 
 def main(argv):
     r_earth = 6371000
@@ -219,14 +235,18 @@ def main(argv):
     craters = get_crater_data()
     # plot_crater_data(craters)
     # print(craters)
-    terrain = read_data('lune_impacts.asc', True)
+    terrain = read_data('lune_impacts.asc', False)
     masque = read_data('lune_masque.asc', False)
 
     # get_crater_topography(terrain, masque, 'WE', craters)
     # get_crater_topography(terrain, masque, 'NS', craters)
     # analyse_crater_radius(craters, 1738000)
-    crater_to_plot = compute_crater_bounds(terrain, craters, 17)
-    crater_plot_3d(crater_to_plot[0], crater_to_plot[1], crater_to_plot[2])
+    # crater_to_plot = compute_crater_bounds(terrain, craters, 17)
+    # crater_plot_3d(crater_to_plot[0], crater_to_plot[1], crater_to_plot[2])
+
+    for i in range(1, 112):
+        crater_to_plot = compute_crater_bounds(terrain, craters, i)
+        crater_plot_3d(crater_to_plot[0], crater_to_plot[1], crater_to_plot[2], True)
 
 if __name__ == "__main__":
 	main(sys.argv)

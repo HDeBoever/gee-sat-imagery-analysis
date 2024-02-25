@@ -9,18 +9,20 @@ from mpl_toolkits.basemap import Basemap
 def calculate_hypocentre(stations):
 	prev_misfit = 10
 	result = {}
-	for i in range(-2000,-1000):
-		for j in range(-3400,3000):
-			for k in range(-35000,-30000):
-				curr_event = {'X':i, 'Y':j, 'Z':-k, 't':-5.1}
-				curr_misfit = calc_misfit(stations, curr_event,6500)
-				if curr_misfit < prev_misfit:
-					result[curr_misfit] = (i,j,k,-5.1)
-					prev_misfit = curr_misfit
-					# print('Curr misfit : ' + str(curr_misfit))
-					# print(i,j,k)
-				else:
-					break
+	for i in range(-1680,-1570):
+		for j in range(2220,2250):
+			for k in range(-35000,-34400):
+				for t in np.arange(-7.,-4., 0.1):
+					curr_event = {'X':i, 'Y':j, 'Z':-k, 't':t}
+					curr_misfit = calc_misfit(stations, curr_event,6500)
+					if curr_misfit < prev_misfit:
+						result[curr_misfit] = (i,j,k,-5.1)
+						prev_misfit = curr_misfit
+						print('Curr misfit : ' + str(curr_misfit))
+						print(i,j,k,t)
+					else:
+						# print("breaking : " + str(i) + ' ' + str(j) + ' ' + str(k) + ' ' + str(t))
+						break
 	# (0.06449304787805835, (-1606, 2236, -34997, -5.1))
 	return result.popitem()
 
@@ -29,17 +31,15 @@ def plot_carte(stations, hypocentre):
 	# La zone d'intérêt est dans la zone UTM 38S, donc EPSG 4471 ou 4470
 	plt.figure(figsize=(12,12))
 	map = Basemap(
-		llcrnrlon=44.9,
-		llcrnrlat=-13.3,
+		llcrnrlon=45.0,
+		llcrnrlat=-13.2,
 		urcrnrlon=46,
-		urcrnrlat=-12.3,
+		urcrnrlat=-12.4,
 		epsg=4470,
 	)
 	
 	for s,data in stations.items():
-		# print(s, data['lon'], data['lat'])
 		plt.plot(data['lon'], data['lat'],'ro')
-		# plt.text(data['lon'], data['lat'], s)
 		plt.annotate(
 			s, # text
 			(data['lon'],data['lat']), # these are the coordinates to position the label
@@ -56,16 +56,16 @@ def plot_carte(stations, hypocentre):
 	# draw parallels and meridians.
 	# labels = [left,right,top,bottom]
 	
-	parallels = np.arange(-13.5,-12,0.2)
+	parallels = np.arange(-13.2,-12,0.2)
 	map.drawparallels(parallels,linewidth=0.18, color= 'w', labels=[False,True,False,False])
 	
-	meridians = np.arange(44.5,46.7,0.2)
+	meridians = np.arange(44.6,46.8,0.2)
 	map.drawmeridians(meridians,linewidth=0.18, color= 'w', labels=[False,False,False,True])
 
 	# Faire appel à #http://server.arcgisonline.com/arcgis/rest/services pour avoir des images de meilleure résolution
 	map.arcgisimage(service='World_Imagery', xpixels = 2000, verbose= True)
-	plt.title('Carte des sismometres au large de Mayotte')
-	plt.show()
+	plt.title('Carte des sismometres au large de Mayotte, EPSG : 4470, ArcGIS image')
+	plt.savefig('mayotte_stations_séisme')
 
 	return None
 
@@ -166,14 +166,14 @@ def main():
 	print(f'Test Event:{event_test}, misfit={misfit:.3f}')
 	
 	print('Using gradient method, starting at test event')
-	# result = calculate_hypocentre(stations)
-	# misfit = result[0]
-	# best_fit = {'X':result[1][0], 'Y':result[1][1], 'Z':result[1][2], 't':-5.1}
-	# séisme = best_fit
-	hypocentre = convert_event_to_coords(stations, event_test)
+	result = calculate_hypocentre(stations)
+	misfit = result[0]
+	best_fit = {'X':result[1][0], 'Y':result[1][1], 'Z':result[1][2], 't':-5.1}
+	séisme = best_fit
+	hypocentre = convert_event_to_coords(stations, séisme)
 		
-	# plot_carte(stations, hypocentre)
-	# print(f'Best fit event={best_fit}, misfit={misfit:.3f}')
+	plot_carte(stations, hypocentre)
+	print(f'Best fit event={best_fit}, misfit={misfit:.3f}')
 	
 	misfit = 0.06449304787805835
 	best_fit = {'X':-1606, 'Y':2236., 'Z':-34997., 't':-5.1}

@@ -9,22 +9,25 @@ from mpl_toolkits.basemap import Basemap
 def calculate_hypocentre(stations):
 	prev_misfit = 10
 	result = {}
-	for i in range(-1680,-1570):
-		for j in range(2220,2250):
-			for k in range(-35000,-34400):
-				for t in np.arange(-7.,-4., 0.1):
+	for i in np.arange(-1780,-1740, 10):
+		for j in np.arange(2200,2450,10):
+			for k in np.arange(-32200,-32000, 10):
+				for t in np.arange(-10.,0., 0.1):
 					curr_event = {'X':i, 'Y':j, 'Z':-k, 't':t}
 					curr_misfit = calc_misfit(stations, curr_event,6500)
-					if curr_misfit < prev_misfit:
-						result[curr_misfit] = (i,j,k,-5.1)
-						prev_misfit = curr_misfit
-						print('Curr misfit : ' + str(curr_misfit))
-						print(i,j,k,t)
+					if curr_misfit > prev_misfit:
+						pass
 					else:
-						# print("breaking : " + str(i) + ' ' + str(j) + ' ' + str(k) + ' ' + str(t))
-						break
-	# (0.06449304787805835, (-1606, 2236, -34997, -5.1))
-	return result.popitem()
+						result[curr_misfit] = (i,j,k,t)
+						prev_misfit = curr_misfit
+						# print('Curr misfit : ' + str(curr_misfit))
+						# print(i,j,k,t)
+						prev_misfit = curr_misfit
+	# Meilleur trouvé 
+	# 0.0528325282409056 (-1780, 2330, -32010, -4.7)
+	print('\nBest found :')
+	print(prev_misfit, result[min(result.keys())])
+	return result[min(result.keys())]
 
 def plot_carte(stations, hypocentre):
 	
@@ -50,8 +53,17 @@ def plot_carte(stations, hypocentre):
 		)
 		
 	# Ajouter l'hypocentre :
-	plt.plot(hypocentre[1], hypocentre[0],'*',label='epicentre')
-	plt.annotate('Epicentre : 2019 00:58:08.01',(hypocentre[1], hypocentre[0]), textcoords='offset points', xytext=(0,-15), color='w', ha='center')
+	plt.plot(hypocentre[1], hypocentre[0],'*',label='Epicentre')
+	plt.annotate(
+		'2019/04/01 00:58:08.01 \n' + str(round(hypocentre[0],4)) + ', ' + str(round(hypocentre[1], 4)),
+		(hypocentre[1], hypocentre[0]), 
+		textcoords='offset points', 
+		xytext=(0,10), color='w', 
+		ha='right'
+	)
+	
+	plt.plot(45.2, -12.8,'bo',label='Mayotte')
+	plt.annotate('Mayotte',(45.2, -12.8), textcoords='offset points', xytext=(0,10), color='w', ha='left')
 	
 	# draw parallels and meridians.
 	# labels = [left,right,top,bottom]
@@ -65,6 +77,7 @@ def plot_carte(stations, hypocentre):
 	# Faire appel à #http://server.arcgisonline.com/arcgis/rest/services pour avoir des images de meilleure résolution
 	map.arcgisimage(service='World_Imagery', xpixels = 2000, verbose= True)
 	plt.title('Carte des sismometres au large de Mayotte, EPSG : 4470, ArcGIS image')
+	plt.legend()
 	plt.savefig('mayotte_stations_séisme')
 
 	return None
@@ -79,6 +92,7 @@ def distance_hypocentrale(hypocentre, stations):
 	depth = hypocentre[2] 
 	
 	# Ajuster pour avoir les profondeurs relatives au fond marin pour chaque sismomètre
+	# Cela nous donnera l'altitude par rapport au Géoïde. 
 	for k,v in stations.items():
 		curr_lat = v['lat']
 		curr_lon = v['lon']
@@ -126,16 +140,15 @@ def convert_event_to_coords(stations, event):
 	deg_lat_per_m=1/(1852*60)
 	deg_lon_per_m= 1/m_per_deg_lon
 	
-	hypocentre_lat = ref_station_lat + deg_lat_per_m*event_lat
+	hypocentre_lat = ref_station_lat - deg_lat_per_m*event_lat
 	hypocentre_lon = ref_station_lon - deg_lon_per_m*event_lon
 	hypocentre_depth = ref_station_depth + event_depth
-	print('MOCE', ref_station_lat, ref_station_lon)
-	print('HYPOCENTRE',hypocentre_lat, hypocentre_lon, hypocentre_depth)
+	print('\nCalculated Hypocentre : ')
+	print('HYPOCENTRE',hypocentre_lat, hypocentre_lon, str(hypocentre_depth) + 'm\n')
 	
 	return hypocentre_lat,hypocentre_lon, hypocentre_depth
 
-def main():
-	
+def main():	
 	# établir les différents temps d'arrivée des ondes sur chaque station à partir de la figure 1.
 	stations={
 		'MOCE':dict(lat=-12-48.44/60, lon=45+38.06/60, Z=-3120, t=0),
@@ -161,25 +174,19 @@ def main():
 	for s,v in stations.items():
 		print(s,v)
 	
-	event_test={'X':-1606, 'Y':2236., 'Z':-34997., 't':-5.1}
-	misfit=calc_misfit(stations, event_test, 6500)
-	print(f'Test Event:{event_test}, misfit={misfit:.3f}')
-	
 	print('Using gradient method, starting at test event')
 	result = calculate_hypocentre(stations)
-	misfit = result[0]
-	best_fit = {'X':result[1][0], 'Y':result[1][1], 'Z':result[1][2], 't':-5.1}
+	
+	misfit = 0.0528325282409056
+	best_fit = {'X':result[0], 'Y':result[1], 'Z':result[2], 't':result[3]}
 	séisme = best_fit
 	hypocentre = convert_event_to_coords(stations, séisme)
-		
+
 	plot_carte(stations, hypocentre)
 	print(f'Best fit event={best_fit}, misfit={misfit:.3f}')
 	
-	misfit = 0.06449304787805835
-	best_fit = {'X':-1606, 'Y':2236., 'Z':-34997., 't':-5.1}
-	
 	d_hypo = distance_hypocentrale(hypocentre, stations)
-	calculate_local_amplitudes(amplitudes,  d_hypo)
+	calculate_local_amplitudes(amplitudes, d_hypo)
 
 if (__name__ == "__main__"):
 	main()
